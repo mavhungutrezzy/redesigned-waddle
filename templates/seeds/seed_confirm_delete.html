@@ -1,0 +1,18 @@
+{% extends "_dashboard_base.html" %}
+
+{% block title %}Delete Seed{% endblock title %}
+
+{% block content %}
+<div class="mt-4">
+  <h1 class="h3">Delete Seed</h1>
+  <p class="mb-4">Delete <strong>{{ object.name }}</strong> ({{ object.batch_number }})?</p>
+
+  <form method="post">
+    {% csrf_token %}
+    <div class="d-flex gap-2">
+      <button class="btn btn-danger" type="submit">Delete</button>
+      <a class="btn btn-outline-secondary" href="{% url 'seed_detail' object.pk %}">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock content %}

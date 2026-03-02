@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -39,6 +40,7 @@ INSTALLED_APPS = [
     # Local
     "accounts",
     "pages",
+    "seeds",
 ]
 
 # https://docs.djangoproject.com/en/dev/ref/settings/#middleware
@@ -73,6 +75,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "seeds.context_processors.reminder_navigation",
             ],
         },
     },
@@ -145,6 +148,9 @@ STATIC_URL = "/static/"
 # https://docs.djangoproject.com/en/dev/ref/contrib/staticfiles/#std:setting-STATICFILES_DIRS
 STATICFILES_DIRS = [BASE_DIR / "static"]
 
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
+
 # https://whitenoise.readthedocs.io/en/latest/django.html
 STORAGES = {
     "default": {
@@ -206,3 +212,27 @@ CSRF_TRUSTED_ORIGINS = [
     "http://localhost:8000",  # Default Django dev server
     "http://127.0.0.1:8000",  # Alternative local address
 ]
+
+
+# django-huey
+ENABLE_DJANGO_HUEY = os.getenv("ENABLE_DJANGO_HUEY", "1") == "1"
+REDIS_URL = os.getenv("REDIS_URL", "redis://127.0.0.1:6379/1")
+HUEY_IMMEDIATE = os.getenv("HUEY_IMMEDIATE", "0") == "1"
+DJANGO_HUEY = {
+    "default": "default",
+    "queues": {
+        "default": {
+            "huey_class": "huey.RedisHuey",
+            "name": "seed-reminders",
+            "immediate": HUEY_IMMEDIATE,
+            "connection": {"url": REDIS_URL},
+            "consumer": {
+                "workers": 2,
+                "worker_type": "thread",
+            },
+        }
+    },
+}
+
+if ENABLE_DJANGO_HUEY:
+    INSTALLED_APPS.append("django_huey")

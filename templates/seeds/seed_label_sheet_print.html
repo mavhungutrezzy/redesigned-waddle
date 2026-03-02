@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Seed Label Sheet</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+  <style>
+    :root {
+      --sheet-width: 198mm;
+      --sheet-height: 285mm;
+      --label-width: 64mm;
+      --label-height: 33mm;
+      --qr-size: 18mm;
+      --label-gap: 2mm;
+    }
+
+    body {
+      background: #f4f6f8;
+      margin: 0;
+      padding: 1rem;
+      font-family: "Montserrat", sans-serif;
+    }
+
+    .sheet-page {
+      width: var(--sheet-width);
+      min-height: var(--sheet-height);
+      margin: 0 auto 1rem;
+      background: #fff;
+      border: 1px solid #dee2e6;
+      padding: 4mm;
+      box-shadow: 0 0.25rem 1rem rgba(0, 0, 0, 0.07);
+    }
+
+    .label-grid {
+      display: grid;
+      grid-template-columns: repeat(3, var(--label-width));
+      gap: var(--label-gap);
+      justify-content: center;
+    }
+
+    .label-cell {
+      width: var(--label-width);
+      height: var(--label-height);
+      border: 1px solid #ced4da;
+      border-radius: 1.5mm;
+      padding: 2.2mm;
+      display: flex;
+      align-items: center;
+      gap: 2mm;
+      overflow: hidden;
+    }
+
+    .label-cell.empty {
+      border-style: dashed;
+      border-color: #edf0f2;
+    }
+
+    .qr-box {
+      width: var(--qr-size);
+      height: var(--qr-size);
+      flex-shrink: 0;
+      border: 1px solid #e5e7eb;
+      border-radius: 1.2mm;
+      overflow: hidden;
+      background: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .qr-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .label-info {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .seed-name {
+      font-size: 9.2pt;
+      font-weight: 700;
+      line-height: 1.15;
+      margin: 0 0 1mm;
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      line-clamp: 2;
+      overflow-wrap: anywhere;
+    }
+
+    .seed-variety {
+      font-size: 7.5pt;
+      line-height: 1.1;
+      color: #0f5132;
+      margin-bottom: 1mm;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .meta-line {
+      font-size: 7pt;
+      line-height: 1.1;
+      color: #495057;
+      margin-bottom: 0.6mm;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .meta-line strong {
+      color: #212529;
+    }
+
+    .meta-upc {
+      font-size: 7.4pt;
+      color: #212529;
+    }
+
+    .meta-upc i {
+      font-size: 8.5pt;
+      vertical-align: middle;
+    }
+
+    .no-print {
+      max-width: var(--sheet-width);
+      margin: 0 auto 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+    }
+
+    @page {
+      size: A4 portrait;
+      margin: 6mm;
+    }
+
+    @media print {
+      body {
+        background: #fff !important;
+        padding: 0;
+      }
+
+      .sheet-page {
+        margin: 0 auto;
+        box-shadow: none;
+        border: none;
+        width: auto;
+        min-height: auto;
+        padding: 0;
+      }
+
+      .sheet-page:not(:last-child) {
+        page-break-after: always;
+      }
+
+      .no-print {
+        display: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="no-print">
+    <div class="small text-muted">
+      {{ selected_count }} label{{ selected_count|pluralize }} selected
+    </div>
+    <div class="d-flex gap-2">
+      <button type="button" class="btn btn-success" onclick="window.print()">
+        <i class="bi bi-printer me-1"></i>Print Sheet
+      </button>
+      <button type="button" class="btn btn-outline-secondary" onclick="window.close()">
+        Close
+      </button>
+    </div>
+  </div>
+
+  {% for page in pages %}
+  <section class="sheet-page">
+    <div class="label-grid">
+      {% for label in page %}
+      {% if label %}
+      <article class="label-cell">
+        <div class="qr-box">
+          {% if label.qr_code %}
+          <img src="{{ label.qr_code.url }}" alt="QR {{ label.batch_number }}">
+          {% endif %}
+        </div>
+        <div class="label-info">
+          <h2 class="seed-name">{{ label.seed_name }}</h2>
+          <div class="seed-variety">{{ label.variety|default:"-" }}</div>
+          <div class="meta-line meta-upc"><i class="bi bi-upc me-1"></i><strong>{{ label.batch_number }}</strong></div>
+          <div class="meta-line">Best Before: {{ label.best_before }}</div>
+        </div>
+      </article>
+      {% else %}
+      <article class="label-cell empty"></article>
+      {% endif %}
+      {% endfor %}
+    </div>
+  </section>
+  {% endfor %}
+</body>
+</html>

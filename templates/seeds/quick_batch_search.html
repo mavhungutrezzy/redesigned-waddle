@@ -1,0 +1,109 @@
+{% extends "_dashboard_base.html" %}
+
+{% block title %}Quick Batch Search{% endblock title %}
+{% block page_title %}Batch Lookup{% endblock %}
+
+{% block content %}
+
+<div class="p-4 p-md-5 text-white text-center rounded-4 shadow-sm mb-4 bg-success">
+  <h1 class="h3 fw-bold mb-2">
+    <i class="bi bi-upc-scan me-2"></i>Quick Batch Search
+  </h1>
+  <p class="mb-0 opacity-75">
+    Enter your batch number to view seed details, viability, and planting instructions
+  </p>
+
+  <form method="post" novalidate class="mx-auto mt-4" style="max-width:540px;">
+    {% csrf_token %}
+
+    <div class="input-group input-group-lg shadow-sm">
+      <span class="input-group-text bg-white border-0 ps-3">
+        <i class="bi bi-search text-muted fs-5"></i>
+      </span>
+
+      <input
+        type="text"
+        name="{{ form.batch_number.name }}"
+        id="{{ form.batch_number.id_for_label }}"
+        class="form-control border-0 {% if form.batch_number.errors %}is-invalid{% endif %}"
+        placeholder="Enter batch number (e.g., V-24-001)"
+        value="{{ form.batch_number.value|default:'' }}"
+        autocomplete="off"
+        autofocus
+      />
+
+    </div>
+    <button class="d-none" type="submit" aria-hidden="true" tabindex="-1">Search</button>
+
+    {% if form.batch_number.errors %}
+      <div class="alert alert-danger d-flex align-items-center gap-2 mt-3 mb-0 text-start" role="alert">
+        <i class="bi bi-exclamation-circle"></i>
+        <div class="small">{{ form.batch_number.errors.0 }}</div>
+      </div>
+    {% endif %}
+  </form>
+
+  <a href="{% url 'quick_qr_search' %}"
+     class="d-inline-flex align-items-center gap-2 mt-4 text-white text-decoration-none opacity-75">
+    <i class="bi bi-qr-code-scan"></i>
+    <span>Use QR code scanner instead</span>
+  </a>
+
+  <div class="mt-4 opacity-75 small">
+    Tip: Batch numbers look like <span class="fw-semibold">V-24-001</span>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-md-4">
+    <div class="h-100 p-4 text-center bg-white rounded-4 shadow-sm border">
+      <div class="d-inline-flex align-items-center justify-content-center rounded-3 bg-success bg-opacity-10 text-success mb-3"
+           style="width:60px;height:60px;">
+        <i class="bi bi-upc-scan fs-3"></i>
+      </div>
+      <h5 class="fw-semibold mb-2">Batch History</h5>
+      <p class="text-secondary small mb-0">
+        Track germination rates and planting history by batch number
+      </p>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="h-100 p-4 text-center bg-white rounded-4 shadow-sm border">
+      <div class="d-inline-flex align-items-center justify-content-center rounded-3 bg-success bg-opacity-10 text-success mb-3"
+           style="width:60px;height:60px;">
+        <i class="bi bi-qr-code fs-3"></i>
+      </div>
+      <h5 class="fw-semibold mb-2">QR Code</h5>
+      <p class="text-secondary small mb-0">
+        Each batch has a unique QR code for instant mobile access
+      </p>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="h-100 p-4 text-center bg-white rounded-4 shadow-sm border">
+      <div class="d-inline-flex align-items-center justify-content-center rounded-3 bg-success bg-opacity-10 text-success mb-3"
+           style="width:60px;height:60px;">
+        <i class="bi bi-calendar-event fs-3"></i>
+      </div>
+      <h5 class="fw-semibold mb-2">Expiry Alerts</h5>
+      <p class="text-secondary small mb-0">
+        Get notified when seeds are approaching expiration date
+      </p>
+    </div>
+  </div>
+</div>
+
+{% if messages %}
+  <div class="mt-4">
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm" role="alert">
+        <i class="bi bi-info-circle me-2"></i>{{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+
+{% endblock content %}

@@ -1,0 +1,178 @@
+{% extends "_dashboard_base.html" %}
+
+{% block title %}Dashboard{% endblock title %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="row g-3 mb-4">
+  <div class="col-12 col-sm-6 col-xl-3">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-body">
+        <div class="text-muted small">Total Seeds</div>
+        <div class="fs-3 fw-bold">{{ total_seeds }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-12 col-sm-6 col-xl-3">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-body">
+        <div class="text-muted small">Categories</div>
+        <div class="fs-3 fw-bold">{{ total_categories }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-12 col-sm-6 col-xl-3">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-body">
+        <div class="text-muted small">Expiring In 30 Days</div>
+        <div class="fs-3 fw-bold text-warning">{{ expiring_soon }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-12 col-sm-6 col-xl-3">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-body">
+        <div class="text-muted small">Expired</div>
+        <div class="fs-3 fw-bold text-danger">{{ expired_count }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-12 col-sm-6 col-xl-3">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-body">
+        <div class="text-muted small">Wishlist Pending</div>
+        <div class="fs-3 fw-bold text-primary">{{ wishlist_pending_count }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-12 col-sm-6 col-xl-3">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-body">
+        <div class="text-muted small">Low Stock Alerts</div>
+        <div class="fs-3 fw-bold text-danger">{{ low_stock_count }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-12 col-sm-6 col-xl-3">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-body">
+        <div class="text-muted small">Wishlist Follow-ups Due</div>
+        <div class="fs-3 fw-bold text-info">{{ wishlist_follow_up_count }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="mb-4">
+  <a href="{% url 'seed_reminders' %}" class="btn btn-outline-dark">
+    <i class="bi bi-bell me-1"></i>Open Reminder Center
+  </a>
+</div>
+
+<div class="row g-4">
+  <div class="col-12">
+    <style>
+      .dashboard-seed-table-card {
+        border: none;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+      }
+      .dashboard-seed-table-card .table {
+        margin: 0;
+        font-size: 0.9375rem;
+      }
+      .dashboard-seed-table-card .table th {
+        font-weight: 500;
+        color: #666;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid #f0f0f0;
+        background: #fff;
+      }
+      .dashboard-seed-table-card .table td {
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid #f5f5f5;
+        color: #333;
+        vertical-align: middle;
+      }
+      .dashboard-seed-table-card .table tr:last-child td {
+        border-bottom: none;
+      }
+      .dashboard-seed-table-card .seed-name {
+        font-weight: 500;
+        color: #1a1a1a;
+      }
+      .dashboard-seed-table-card .seed-tag {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        background: #f5f5f5;
+        border-radius: 4px;
+        font-size: 0.875rem;
+        color: #555;
+      }
+      .dashboard-seed-table-card .seed-batch {
+        font-family: 'SF Mono', Monaco, monospace;
+        font-size: 0.875rem;
+        color: #666;
+      }
+      .dashboard-seed-table-card .seed-date {
+        color: #666;
+      }
+      .dashboard-seed-table-card .btn-sm {
+        padding: 0.375rem 1rem;
+        font-size: 0.875rem;
+        border-radius: 4px;
+      }
+    </style>
+    <div class="card border-0 shadow-sm dashboard-seed-table-card">
+      <div class="card-header bg-white border-0 pt-3">
+        <div class="d-flex justify-content-between align-items-center gap-2">
+          <h5 class="mb-0">Recent Seeds</h5>
+          <a class="btn btn-success btn-sm" href="{% url 'seed_create' %}">
+            <i class="bi bi-plus-circle me-1"></i>Add Seed
+          </a>
+        </div>
+      </div>
+      <div class="card-body pt-2">
+        {% if recent_seeds %}
+        <div class="table-responsive">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Seed</th>
+                <th>Category</th>
+                <th>Batch</th>
+                <th>Stock</th>
+                <th>Best Before</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for seed in recent_seeds %}
+              <tr>
+                <td class="seed-name">
+                  <div class="fw-semibold">{{ seed.name }}</div>
+                  <div class="small text-success">{{ seed.variety|default:"-" }}</div>
+                </td>
+                <td><span class="badge border border-success text-success rounded-1">{{ seed.get_category_display }}</span></td>
+                <td class="seed-batch fw-bold">{{ seed.batch_number }}</td>
+                <td>{{ seed.quantity }} {{ seed.get_unit_display }}</td>
+                <td class="seed-date">{{ seed.best_before }}</td>
+                <td class="text-end">
+                  <a class="btn btn-sm btn-outline-dark" href="{% url 'seed_detail' seed.pk %}">Edit</a>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <p class="text-muted mb-0">No seeds yet. Add your first seed to populate dashboard insights.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock content %}

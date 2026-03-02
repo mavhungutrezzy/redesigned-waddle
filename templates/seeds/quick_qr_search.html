@@ -1,0 +1,152 @@
+{% extends "_dashboard_base.html" %}
+
+{% block title %}QR Search{% endblock title %}
+{% block page_title %}QR Lookup{% endblock %}
+
+{% block content %}
+<div class="p-4 p-md-5 text-center mb-4">
+  <h1 class="h3 fw-bold mb-2">
+    <i class="bi bi-qr-code-scan me-2"></i>QR Search
+  </h1>
+  <p class="mb-0 opacity-75">
+    Scan your seed QR code to open seed details instantly
+  </p>
+
+  <div class="mx-auto mt-4 bg-white rounded-4 shadow-sm overflow-hidden position-relative" style="max-width: 540px;">
+    <div class="position-relative bg-dark">
+      <div id="qr-reader" class="w-100" style="min-height: 320px;"></div>
+
+      <div class="position-absolute top-0 start-0 end-0 bottom-0 pointer-events-none d-flex align-items-center justify-content-center">
+        <div class="position-relative" style="width: 220px; height: 220px;">
+          <div class="position-absolute top-0 start-0 border-top border-start border-3 border-success rounded-top-start" style="width: 40px; height: 40px; border-top-left-radius: 12px;"></div>
+          <div class="position-absolute top-0 end-0 border-top border-end border-3 border-success rounded-top-end" style="width: 40px; height: 40px; border-top-right-radius: 12px;"></div>
+          <div class="position-absolute bottom-0 start-0 border-bottom border-start border-3 border-success rounded-bottom-start" style="width: 40px; height: 40px; border-bottom-left-radius: 12px;"></div>
+          <div class="position-absolute bottom-0 end-0 border-bottom border-end border-3 border-success rounded-bottom-end" style="width: 40px; height: 40px; border-bottom-right-radius: 12px;"></div>
+          <div class="position-absolute start-0 end-0 bg-success opacity-75" style="height: 2px; top: 50%; animation: scan 2s ease-in-out infinite; box-shadow: 0 0 8px #198754;"></div>
+        </div>
+      </div>
+
+      <div id="camera-loading" class="position-absolute top-0 start-0 end-0 bottom-0 bg-dark d-flex flex-column align-items-center justify-content-center text-white">
+        <div class="spinner-border text-success mb-3" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="small mb-0">Initializing camera...</p>
+      </div>
+    </div>
+  </div>
+
+  <div id="qr-client-error" class="alert alert-danger d-none align-items-center gap-2 mt-3 mb-0 text-start mx-auto" role="alert" style="max-width:540px;">
+    <i class="bi bi-exclamation-circle"></i>
+    <div class="small"></div>
+  </div>
+
+  {% if form.qr_content.errors %}
+    <div class="alert alert-danger d-flex align-items-center gap-2 mt-3 mb-0 text-start mx-auto" role="alert" style="max-width:540px;">
+      <i class="bi bi-exclamation-circle"></i>
+      <div class="small">{{ form.qr_content.errors.0 }}</div>
+    </div>
+  {% endif %}
+
+  <a href="{% url 'quick_batch_search' %}" class="d-inline-flex align-items-center gap-2 mt-4 text-success text-decoration-none opacity-75">
+    <i class="bi bi-upc-scan"></i>
+    <span>Use batch number search instead</span>
+  </a>
+
+  <div class="mt-4 opacity-75 small">
+    Tip: Hold steady and keep the code centered in the frame
+  </div>
+</div>
+
+
+
+{% if messages %}
+  <div class="mt-4">
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm" role="alert">
+        <i class="bi bi-info-circle me-2"></i>{{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+
+<!-- Hidden Form -->
+<form method="post" novalidate id="qr-scan-form" class="d-none">
+  {% csrf_token %}
+  <textarea id="{{ form.qr_content.id_for_label }}" name="{{ form.qr_content.name }}"></textarea>
+  <button type="submit">Search</button>
+</form>
+{% endblock content %}
+
+{% block javascript %}
+{{ block.super }}
+<script src="https://unpkg.com/html5-qrcode" defer></script>
+<style>
+  @keyframes scan {
+    0%, 100% { transform: translateY(-80px); opacity: 0; }
+    50% { transform: translateY(80px); opacity: 1; }
+  }
+  
+  #qr-reader__dashboard_section_csr span,
+  #qr-reader__dashboard_section_swaplink,
+  #qr-reader__camera_permission_button,
+  #qr-reader__camera_selection_button,
+  #qr-reader__status_span {
+    display: none !important;
+  }
+
+  #qr-reader video {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover;
+  }
+
+  #qr-reader {
+    border: none !important;
+    box-shadow: none !important;
+
+  
+  }
+</style>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const qrReaderElement = document.getElementById("qr-reader");
+    const qrContentInput = document.getElementById("{{ form.qr_content.id_for_label }}");
+    const qrForm = document.getElementById("qr-scan-form");
+    const clientError = document.getElementById("qr-client-error");
+    const loadingIndicator = document.getElementById("camera-loading");
+    
+    if (!qrReaderElement || !qrContentInput || !qrForm || typeof Html5Qrcode === "undefined") {
+      return;
+    }
+
+    const scanner = new Html5Qrcode("qr-reader");
+    const config = { fps: 10 };
+
+    function showClientError(message) {
+      if (!clientError) return;
+      clientError.classList.remove("d-none");
+      clientError.classList.add("d-flex");
+      const textContainer = clientError.querySelector(".small");
+      if (textContainer) textContainer.textContent = message;
+      if (loadingIndicator) loadingIndicator.classList.add("d-none");
+    }
+
+    scanner.start(
+      { facingMode: "environment" },
+      config,
+      function (decodedText) {
+        qrContentInput.value = decodedText;
+        scanner.stop().catch(function () {});
+        qrForm.submit();
+      },
+      function () {}
+    ).then(function() {
+      if (loadingIndicator) loadingIndicator.classList.add("d-none");
+    }).catch(function (err) {
+      console.error(err);
+      showClientError("Unable to access camera. Please allow camera permissions and refresh the page.");
+    });
+  });
+</script>
+{% endblock javascript %}

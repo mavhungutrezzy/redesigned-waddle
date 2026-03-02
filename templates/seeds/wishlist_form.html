@@ -1,0 +1,120 @@
+{% extends "_dashboard_base.html" %}
+
+{% block title %}{% if wishlist_item %}Edit Wishlist Item{% else %}New Wishlist Item{% endif %}{% endblock title %}
+{% block page_title %}Seed Wishlist{% endblock %}
+
+{% block css %}
+{{ block.super }}
+<style>
+  .required-star {
+    display: inline-block;
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h1 class="h3 btn btn-outline-secondary btn-md disabled fw-bold mb-0">
+        {% if wishlist_item %}Edit Wishlist Seed{% else %}Add Wishlist Seed{% endif %}
+      </h1>
+    </div>
+    <a href="{% url 'wishlist_list' %}" class="btn btn-outline-secondary">
+      <i class="bi bi-arrow-left me-1"></i>Back to Wishlist
+    </a>
+  </div>
+
+  <form method="post" novalidate>
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+      <i class="bi bi-exclamation-triangle-fill me-2"></i>
+      {{ form.non_field_errors }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endif %}
+
+    <div class="row g-3">
+      {% for field in form %}
+      <div class="{% if field.name == 'notes' %}col-12{% elif field.field.widget.input_type == 'checkbox' %}col-12{% else %}col-md-6 col-lg-4{% endif %}">
+        {% if field.field.widget.input_type == 'checkbox' %}
+        <div class="form-check mt-2">
+          {{ field }}
+          <label class="form-check-label" for="{{ field.id_for_label }}">
+            {{ field.label }}
+          </label>
+        </div>
+        {% else %}
+        <div class="form-floating">
+          {{ field }}
+          <label for="{{ field.id_for_label }}">
+            {{ field.label }}{% if field.field.required %} <span class="text-danger required-star">*</span>{% endif %}
+          </label>
+        </div>
+        {% endif %}
+        {% if field.help_text %}
+        <div class="form-text ms-1">
+          <i class="bi bi-info-circle small me-1"></i>{{ field.help_text }}
+        </div>
+        {% endif %}
+        {% for error in field.errors %}
+        <div class="text-danger small mt-1 ms-1">
+          <i class="bi bi-exclamation-circle me-1"></i>{{ error }}
+        </div>
+        {% endfor %}
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center pt-2">
+      <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary btn-lg px-4">
+          <i class="bi bi-save me-2"></i>
+          {% if wishlist_item %}Save Changes{% else %}Add Wishlist Seed{% endif %}
+        </button>
+        <a href="{% url 'wishlist_list' %}" class="btn btn-outline-secondary btn-lg">Cancel</a>
+      </div>
+
+      {% if wishlist_item %}
+      <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteWishlistModal">
+        <i class="bi bi-trash me-1"></i>Delete
+      </button>
+      {% endif %}
+    </div>
+  </form>
+</div>
+
+{% if wishlist_item %}
+<div class="modal fade" id="deleteWishlistModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title text-danger">
+          <i class="bi bi-exclamation-triangle-fill me-2"></i>Confirm Deletion
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p>Are you sure you want to delete <strong>"{{ wishlist_item.name }}"</strong> from wishlist?</p>
+        <p class="text-muted mb-0">This action cannot be undone.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <form method="post" action="{% url 'wishlist_delete' wishlist_item.pk %}" class="d-inline">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger">Delete Permanently</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock content %}

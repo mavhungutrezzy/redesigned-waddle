@@ -1,0 +1,215 @@
+{% extends "_dashboard_base.html" %}
+
+{% block title %}{{ seed.name }}{% endblock title %}
+
+{% block page_title %}{{ seed.name }} ({{ seed.batch_number }}){% endblock %}
+
+{% block content %}
+
+<!-- Back Button & Actions -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <a href="{% url 'seed_list' %}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i>Back to Inventory
+    </a>
+    <div class="d-flex gap-2">
+        <a href="{% url 'seed_print_label' seed.pk %}" class="btn btn-outline-success" target="_blank" rel="noopener">
+            <i class="bi bi-printer me-1"></i>Print
+        </a>
+        <a href="{% url 'seed_update' seed.pk %}" class="btn btn-outline-primary">
+            <i class=""></i>Edit
+        </a>
+        <button class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
+            <i class="bi bi-trash me-1"></i>Delete
+        </button>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Left Column: Image & QR -->
+    <div class="col-lg-5">
+        <!-- Main Seed Image -->
+        <div class="card border-0 shadow-sm mb-4 overflow-hidden">
+            {% if seed.photos.all %}
+              <div class="position-relative">
+                <img
+                  src="{{ seed.photos.first.image.url }}"
+                  alt="{{ seed.name }}"
+                  class="img-fluid w-100"
+                  style="height: 350px; object-fit: cover;"
+                >
+          
+                <div class="position-absolute bottom-0 start-0 end-0 p-3 text-white"
+                     style="background: linear-gradient(to top, rgba(0,0,0,.75), rgba(0,0,0,0));">
+                  <div class="d-flex align-items-end justify-content-between">
+                    <div>
+                      <h4 class="mb-1">{{ seed.name }}</h4>
+                      <div class="small opacity">
+                        <i class="bi bi-upc me-1"></i>Batch: {{ seed.batch_number }}
+                      </div>
+                    </div>
+          
+                    <span class="badge border border-success text-success rounded-1">
+                      <i class="bi bi-images me-1"></i>{{ seed.photos.count }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            {% else %}
+              <div class="bg-light d-flex align-items-center justify-content-center" style="height: 350px;">
+                <div class="text-center text-muted">
+                  <i class="bi bi-image fs-1 mb-2"></i>
+                  <p class="mb-0">No photo available</p>
+                </div>
+              </div>
+            {% endif %}
+          </div>
+
+        <!-- QR Code Section -->
+        {% if seed.qr_code %}
+        <div class="card border-0 shadow-sm mb-4 overflow-hidden">
+
+        
+            <div class="card-body text-center p-4">
+        
+                <!-- QR Container -->
+                <div class="position-relative d-inline-block mb-3">
+                    <div class="p-3 bg-white rounded-4 shadow-sm border">
+                        <img src="{{ seed.qr_code.url }}"
+                             alt="QR code for {{ seed.batch_number }}"
+                             class="img-fluid"
+                             style="width: 190px; height: 190px; object-fit: contain;">
+                    </div>
+                </div>
+        
+                <!-- Description -->
+                <p class="text-muted small mb-4">
+                    Scan this QR code to quickly access this seed’s full details and inventory information.
+                </p>
+        
+                <!-- Actions -->
+                <div class="d-grid">
+                    <a href="{{ seed.qr_code.url }}"
+                       download="qr-{{ seed.batch_number }}.png"
+                       class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-download me-2"></i>Download QR Code
+                    </a>
+                </div>
+        
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Right Column: Details -->
+    <div class="col-lg-7">
+        <div class="card border-1 shadow-sm mb-4">
+            <div class="card-body p-4">
+              <div class="d-flex align-items-center justify-content-between mb-3">
+                <h5 class="mb-0">
+                  Seed Information
+                </h5>
+              </div>
+          
+              <dl class="row mb-0">
+                <dt class="col-5 col-md-4 text-muted fw-normal">Variety</dt>
+                <dd class="col-7 col-md-8 mb-2 ">{{ seed.variety|default:"-" }}</dd>
+          
+                <dt class="col-5 col-md-4 text-muted fw-normal">Category</dt>
+                <dd class="col-7 col-md-8 mb-2">
+                  <span class="badge border border-success text-success rounded-1">
+                    {{ seed.get_category_display }}
+                  </span>
+                </dd>
+          
+                <dt class="col-5 col-md-4 text-muted fw-normal">Current Stock</dt>
+                <dd class="col-7 col-md-8 mb-2 fw-bold text-success">
+                  {{ seed.quantity }} {{ seed.get_unit_display }}
+                </dd>
+          
+                <dt class="col-5 col-md-4 text-muted fw-normal">Date Collected</dt>
+                <dd class="col-7 col-md-8 mb-2">{{ seed.date_collected|default:"-" }}</dd>
+          
+                <dt class="col-5 col-md-4 text-muted fw-normal">Best Before</dt>
+                <dd class="col-7 col-md-8 mb-2 {% if seed.is_expired %}text-danger{% endif %}">
+                  {{ seed.best_before|default:"-" }}
+                  {% if seed.is_expired %}
+                    <span class="badge bg-danger ms-2">Expired</span>
+                  {% endif %}
+                </dd>
+          
+                <dt class="col-5 col-md-4 text-muted fw-normal">Source</dt>
+                <dd class="col-7 col-md-8 mb-2">{{ seed.get_collection_source_display }}</dd>
+          
+                <dt class="col-5 col-md-4 text-muted fw-normal">Storage Location</dt>
+                <dd class="col-7 col-md-8 mb-0">{{ seed.storage_location|default:"Not specified" }}</dd>
+              </dl>
+          
+              {% if seed.notes %}
+                <hr class="my-3">
+                <div class="text-muted small mb-1">Notes</div>
+                <div class="small">{{ seed.notes }}</div>
+              {% endif %}
+            </div>
+          </div>
+    </div>
+</div>
+
+<!-- Photo Gallery -->
+{% if seed.photos.all|length > 1 %}
+<div class="card border-0 shadow-sm mt-4">
+    <div class="card-header bg-white border-bottom py-3">
+        <h5 class="mb-0"><i class="bi bi-images me-2 text-success"></i>Photo Gallery</h5>
+    </div>
+    <div class="card-body p-3">
+        <div class="row g-2">
+            <div class="col-md-8">
+                {% with photo=seed.photos.all.0 %}
+                <a href="{{ photo.image.url }}" target="_blank" rel="noopener">
+                  <img src="{{ photo.image.url }}"
+                       alt="Photo 1 of {{ seed.name }}"
+                       class="img-fluid rounded w-100 object-fit-cover"
+                       style="height: 322px;"
+                       loading="eager">
+                </a>
+                {% endwith %}
+            </div>
+            <div class="col-md-4 d-flex flex-column gap-2">
+                {% for photo in seed.photos.all %}
+                {% if forloop.counter > 1 and forloop.counter <= 3 %}
+                <a href="{{ photo.image.url }}" target="_blank" rel="noopener">
+                  <img src="{{ photo.image.url }}"
+                       alt="Photo {{ forloop.counter }} of {{ seed.name }}"
+                       class="img-fluid rounded w-100 object-fit-cover flex-fill"
+                       style="height: 155px;"
+                       loading="lazy">
+                </a>
+                {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title"><i class="me-2"></i>Confirm Delete</h5>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete <strong>{{ seed.name }}</strong> (Batch: {{ seed.batch_number }})?</p>
+                <p class="text-muted small mb-0">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                <a href="{% url 'seed_delete' seed.pk %}" class="btn btn-danger">
+                    <i class="bi bi-trash me-1"></i>Delete Seed
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock content %}

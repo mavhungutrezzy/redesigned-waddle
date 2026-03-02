@@ -1,0 +1,151 @@
+{% extends "_dashboard_base.html" %}
+
+{% block title %}Print Label Sheet{% endblock title %}
+{% block page_title %}Print Label Sheet{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-2 mb-4">
+  <div>
+    <h1 class="h3 mb-1">Batch Label Sheet</h1>
+    <p class="text-muted mb-0 small">{{ result_count }} seed{{ result_count|pluralize }} available</p>
+  </div>
+  <a class="btn btn-outline-secondary" href="{% url 'seed_list' %}">
+    <i class="bi bi-arrow-left me-1"></i>Back to Inventory
+  </a>
+</div>
+
+<div class="card border-1 shadow-sm mb-4">
+  <div class="card-body">
+    <form method="get" class="row g-2 align-items-end">
+      <div class="col-12 col-lg-5">
+        <label class="form-label small text-muted mb-1">Search</label>
+        <div class="input-group">
+          <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+          <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="Search name, variety, or batch">
+        </div>
+      </div>
+      <div class="col-12 col-md-6 col-lg-3">
+        <label class="form-label small text-muted mb-1">Category</label>
+        <select name="category" class="form-select">
+          <option value="">All categories</option>
+          {% for value, label in category_choices %}
+          <option value="{{ value }}" {% if selected_category == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-12 col-md-6 col-lg-3">
+        <label class="form-label small text-muted mb-1">Source</label>
+        <select name="source" class="form-select">
+          <option value="">All sources</option>
+          {% for value, label in source_choices %}
+          <option value="{{ value }}" {% if selected_source == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-12 col-lg-1 d-grid">
+        <button class="btn btn-success" type="submit"><i class="bi bi-funnel"></i></button>
+      </div>
+      <div class="col-12">
+        <a class="btn btn-link px-0 text-decoration-none" href="{% url 'seed_label_sheet_select' %}">Clear filters</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% if seeds %}
+<form method="post" action="{% url 'seed_label_sheet_print' %}" target="_blank" rel="noopener">
+  {% csrf_token %}
+  <div class="card border-1 rounded-1 shadow-sm">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+      <div class="form-check mb-0">
+        <input class="form-check-input" type="checkbox" id="selectAllSeeds">
+        <label class="form-check-label fw-semibold" for="selectAllSeeds">
+          Select all listed seeds
+        </label>
+      </div>
+      <div class="d-flex align-items-center gap-2">
+        <span class="small text-muted"><span id="selectedCount">0</span> selected</span>
+        <button type="submit" class="btn btn-success btn-sm" id="printSheetBtn" disabled>
+          <i class="bi bi-printer me-1"></i>Open Printable Sheet
+        </button>
+      </div>
+    </div>
+    <div class="table-responsive">
+      <table class="table mb-0 align-middle">
+        <thead>
+          <tr>
+            <th style="width: 52px;"></th>
+            <th>Seed</th>
+            <th>Category</th>
+            <th>Batch</th>
+            <th>Best Before</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for seed in seeds %}
+          <tr>
+            <td class="text-center">
+              <input class="form-check-input seed-checkbox" type="checkbox" name="seed_ids" value="{{ seed.pk }}" id="seedSelect{{ seed.pk }}">
+            </td>
+            <td>
+              <label class="fw-semibold mb-0" for="seedSelect{{ seed.pk }}">{{ seed.name }}</label>
+              <div class="small text-success">{{ seed.variety|default:"-" }}</div>
+            </td>
+            <td><span class="badge border border-success text-success rounded-1">{{ seed.get_category_display }}</span></td>
+            <td class="fw-bold">{{ seed.batch_number }}</td>
+            <td>{{ seed.best_before }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</form>
+{% else %}
+<div class="card border-1 shadow-sm">
+  <div class="card-body py-5 text-center">
+    <i class="bi bi-printer fs-1 text-muted"></i>
+    <h5 class="mt-3 mb-1">No seeds available</h5>
+    <p class="text-muted mb-3">Adjust filters or add seeds before printing a label sheet.</p>
+    <a class="btn btn-success" href="{% url 'seed_create' %}">
+      <i class="bi bi-plus-circle me-1"></i>Add Seed
+    </a>
+  </div>
+</div>
+{% endif %}
+{% endblock content %}
+
+{% block javascript %}
+{{ block.super }}
+<script>
+  (function () {
+    const selectAll = document.getElementById("selectAllSeeds");
+    const checkboxes = Array.from(document.querySelectorAll(".seed-checkbox"));
+    const selectedCount = document.getElementById("selectedCount");
+    const printBtn = document.getElementById("printSheetBtn");
+
+    if (!selectAll || !checkboxes.length || !selectedCount || !printBtn) return;
+
+    function syncState() {
+      const checkedCount = checkboxes.filter((box) => box.checked).length;
+      selectedCount.textContent = checkedCount;
+      printBtn.disabled = checkedCount === 0;
+      selectAll.checked = checkedCount === checkboxes.length;
+      selectAll.indeterminate = checkedCount > 0 && checkedCount < checkboxes.length;
+    }
+
+    selectAll.addEventListener("change", function () {
+      checkboxes.forEach((box) => {
+        box.checked = this.checked;
+      });
+      syncState();
+    });
+
+    checkboxes.forEach((box) => {
+      box.addEventListener("change", syncState);
+    });
+
+    syncState();
+  })();
+</script>
+{% endblock javascript %}
