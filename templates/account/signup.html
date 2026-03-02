@@ -3,11 +3,96 @@
 
 {% block title %}Sign up{% endblock %}
 
+{% block css %}
+{{ block.super }}
+<style>
+  .auth-shell {
+    min-height: calc(100vh - 170px);
+  }
+  .auth-card {
+    border: 1px solid #dfe6e1;
+    border-radius: 1rem;
+    box-shadow: 0 .25rem 1rem rgba(0, 0, 0, .06);
+  }
+  .auth-side {
+    background:
+      linear-gradient(120deg, rgba(25, 135, 84, .86), rgba(25, 135, 84, .7)),
+      url("/static/images/hero.jpg") center/cover no-repeat;
+    color: #fff;
+    border-radius: 1rem;
+    min-height: 420px;
+  }
+</style>
+{% endblock %}
+
 {% block content %}
-<h2>Sign up</h2>
-<form method="post">
-  {% csrf_token %}
-  {{ form|crispy }}
-  <button class="btn btn-success" type="submit">Sign up</button>
-</form>
+<div class="row g-4 align-items-stretch auth-shell py-4">
+  <div class="col-lg-5">
+    <div class="auth-card bg-white p-4 p-lg-5 h-100">
+      <h1 class="h3 mb-2">Create Account</h1>
+      <p class="text-muted mb-4">Start managing your seed operations in one place.</p>
+      <form method="post" novalidate>
+        {% csrf_token %}
+        {% for hidden in form.hidden_fields %}
+          {{ hidden }}
+        {% endfor %}
+
+        {% if form.non_field_errors %}
+        <div class="alert alert-danger py-2">
+          {% for error in form.non_field_errors %}
+          <div>{{ error }}</div>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        {% for field in form.visible_fields %}
+          {% if field.field.widget.input_type == "checkbox" %}
+          <div class="form-check mb-3">
+            {{ field }}
+            <label class="form-check-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+          </div>
+          {% else %}
+          <div class="form-floating mb-3">
+            {{ field }}
+            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+          </div>
+          {% endif %}
+          {% for error in field.errors %}
+          <div class="text-danger small mt-n2 mb-2">{{ error }}</div>
+          {% endfor %}
+        {% endfor %}
+
+        <div class="d-grid mt-3">
+          <button class="btn btn-success btn-lg" type="submit">Sign up</button>
+        </div>
+      </form>
+      <div class="small text-muted mt-4">
+        Already have an account?
+        <a href="{% url 'account_login' %}" class="text-success text-decoration-none fw-semibold">Log in</a>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-7 d-none d-lg-block">
+    <div class="auth-side p-5 d-flex flex-column justify-content-end h-100">
+      <h2 class="h3 mb-2">Grow Better With Data</h2>
+      <p class="mb-0 opacity-75">Keep batch numbers, expiry dates, and acquisition plans organized from day one.</p>
+    </div>
+  </div>
+</div>
 {% endblock content %}
+
+{% block javascript %}
+{{ block.super }}
+<script>
+  (function () {
+    document.querySelectorAll(".form-floating input, .form-floating textarea, .form-floating select").forEach((el) => {
+      if (el.type !== "checkbox" && !el.placeholder) el.placeholder = " ";
+      if (!el.classList.contains("form-control") && el.tagName !== "SELECT") el.classList.add("form-control");
+      if (el.tagName === "SELECT" && !el.classList.contains("form-select")) el.classList.add("form-select");
+    });
+    document.querySelectorAll(".form-check input[type='checkbox']").forEach((el) => {
+      if (!el.classList.contains("form-check-input")) el.classList.add("form-check-input");
+    });
+  })();
+</script>
+{% endblock javascript %}

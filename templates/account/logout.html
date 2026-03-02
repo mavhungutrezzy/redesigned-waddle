@@ -3,16 +3,34 @@
 
 {% block title %}Log out{% endblock %}
 
+{% block css %}
+{{ block.super }}
+<style>
+  .auth-shell {
+    min-height: calc(100vh - 170px);
+  }
+  .auth-card {
+    border: 1px solid #dfe6e1;
+    border-radius: 1rem;
+    box-shadow: 0 .25rem 1rem rgba(0, 0, 0, .06);
+    max-width: 640px;
+  }
+</style>
+{% endblock %}
 
 {% block content %}
-<h1>Sign Out</h1>
-
-<p>Are you sure you want to sign out?</p>
-
-<form method="post" action="{% url 'account_logout' %}">
-  {% csrf_token %}
-  {{ form|crispy }}
-  <button class="btn btn-danger" type="submit">Sign Out</button>
-</form>
-
+<div class="d-flex align-items-center justify-content-center auth-shell py-4">
+  <div class="auth-card bg-white p-4 p-lg-5 w-100">
+    <h1 class="h3 mb-2">Sign Out</h1>
+    <p class="text-muted mb-4">Are you sure you want to sign out of your account?</p>
+    <form method="post" action="{% url 'account_logout' %}">
+      {% csrf_token %}
+      {{ form|crispy }}
+      <div class="d-flex flex-wrap gap-2">
+        <button class="btn btn-danger px-4" type="submit">Sign Out</button>
+        <a href="{% url 'seed_dashboard' %}" class="btn btn-outline-secondary px-4">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
 {% endblock content %}

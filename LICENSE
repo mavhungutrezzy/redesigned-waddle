@@ -22,3 +22,12 @@ HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
 WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
+
+<a href="{% url 'quick_batch_search' %}" class="d-inline-flex align-items-center gap-2 mt-4 text-white text-decoration-none opacity-75">
+    <i class="bi bi-upc-scan"></i>
+    <span>Use batch number lookup instead</span>
+  </a>
+
+  <div class="mt-4 opacity-75 small">
+    Tip: Keep the QR code inside the frame until scan completes
+  </div>

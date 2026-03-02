@@ -1,11 +1,156 @@
 {% extends '_base.html' %}
 {% load static %}
 
-{% block title %}Home page{% endblock title %}
+{% block title %}Lithium | Seed Inventory Management{% endblock title %}
+
+{% block css %}
+{{ block.super }}
+<style>
+  .info-card {
+    background: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 0.75rem;
+    box-shadow: 0 .125rem .5rem rgba(0, 0, 0, .05);
+  }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="pricing-header px-3 py-3 pt-md-5 pb-md-4 mx-auto text-center">
-  <img src="{% static 'images/lithium.png' %}" class="img-fluid" alt="Lithium logo"/>
-  <p class="lead">A Django starter project with batteries.</p>
+<!-- Hero Section - Full Width -->
+<div class="row">
+  <div class="col-12 px-0">
+    <section class="py-5 bg-success text-white">
+      <div class="container py-4">
+        <div class="row justify-content-center">
+          <div class="col-lg-8 text-center">
+            <span class="badge bg-white text-success mb-3 text-uppercase tracking-wide">Seed Operations Platform</span>
+            <h1 class="display-5 fw-bold mb-3">Manage Seeds with Confidence</h1>
+            <p class="lead mb-4 opacity-75">
+              Track inventory, plan wishlist acquisitions, stay ahead with reminders, and print clean batch labels.
+            </p>
+            <div class="d-flex flex-wrap justify-content-center gap-2">
+              <a class="btn btn-light btn-lg px-4 fw-semibold" href="{% url 'account_signup' %}">
+                <i class="bi bi-person-plus me-2"></i>Get Started
+              </a>
+              <a class="btn btn-outline-light btn-lg px-4" href="{% url 'account_login' %}">
+                <i class="bi bi-box-arrow-in-right me-2"></i>Log In
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<!-- Features Section -->
+<div class="row justify-content-center py-5">
+  <div class="col-12 col-xl-10">
+    <div class="text-center mb-5">
+      <h2 class="h3">Core Features</h2>
+      <p class="text-muted mb-0">Everything you need to manage seed operations from one dashboard.</p>
+    </div>
+
+    <div class="row g-4">
+      <div class="col-md-6 col-lg-3">
+        <div class="text-center p-3 h-100 info-card">
+          <div class="bg-success bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 64px; height: 64px;">
+            <i class="bi bi-box-seam text-success fs-3"></i>
+          </div>
+          <h3 class="h5 mb-2">Seed Inventory</h3>
+          <p class="text-muted small mb-0">Track stock, categories, storage locations, and batch numbers.</p>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg-3">
+        <div class="text-center p-3 h-100 info-card">
+          <div class="bg-success bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 64px; height: 64px;">
+            <i class="bi bi-bookmark-heart text-success fs-3"></i>
+          </div>
+          <h3 class="h5 mb-2">Wishlist</h3>
+          <p class="text-muted small mb-0">Plan seed acquisitions and convert wishlist items to inventory.</p>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg-3">
+        <div class="text-center p-3 h-100 info-card">
+          <div class="bg-success bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 64px; height: 64px;">
+            <i class="bi bi-bell text-success fs-3"></i>
+          </div>
+          <h3 class="h5 mb-2">Reminders</h3>
+          <p class="text-muted small mb-0">Get in-app alerts for expiry, low stock, and follow-ups.</p>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg-3">
+        <div class="text-center p-3 h-100 info-card">
+          <div class="bg-success bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 64px; height: 64px;">
+            <i class="bi bi-printer text-success fs-3"></i>
+          </div>
+          <h3 class="h5 mb-2">Label Printing</h3>
+          <p class="text-muted small mb-0">Print single labels or full sheets with configurable layouts.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- How It Works -->
+<div class="row justify-content-center pb-5">
+  <div class="col-12 col-xl-10">
+    <div class="text-center mb-5">
+      <h2 class="h3">How It Works</h2>
+      <p class="text-muted mb-0">Get started in three simple steps.</p>
+    </div>
+
+    <div class="row g-4">
+      <div class="col-md-4">
+        <div class="text-center p-3 h-100 info-card">
+          <span class="badge bg-success rounded-pill mb-3 fs-6 px-3 py-2">Step 1</span>
+          <h3 class="h5 mb-2">Capture Seed Data</h3>
+          <p class="text-muted small mb-0">Add your seeds and photos, including batch and date information.</p>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="text-center p-3 h-100 info-card">
+          <span class="badge bg-success rounded-pill mb-3 fs-6 px-3 py-2">Step 2</span>
+          <h3 class="h5 mb-2">Monitor Events</h3>
+          <p class="text-muted small mb-0">Use reminders to stay ahead of expiry, low stock, and wishlist actions.</p>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="text-center p-3 h-100 info-card">
+          <span class="badge bg-success rounded-pill mb-3 fs-6 px-3 py-2">Step 3</span>
+          <h3 class="h5 mb-2">Print & Organize</h3>
+          <p class="text-muted small mb-0">Generate QR-ready labels for packets, jars, and storage containers.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CTA Section - Full Width -->
+<div class="row">
+  <div class="col-12 px-0">
+    <section class="py-5 bg-light border-top">
+      <div class="container">
+        <div class="row justify-content-center">
+          <div class="col-12 col-md-8 col-lg-6">
+            <div class="card border shadow-sm">
+              <div class="card-body p-5 text-center">
+                <h2 class="h3 mb-2">Start Managing Your Seed Collection</h2>
+                <p class="text-muted mb-4">Create an account and set up your first seed in minutes.</p>
+                <a class="btn btn-success btn-lg px-5 fw-semibold" href="{% url 'account_signup' %}">
+                  <i class="bi bi-rocket-takeoff me-2"></i>Create Free Account
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
 </div>
 {% endblock content %}
