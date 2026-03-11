@@ -6,7 +6,7 @@ from django.urls import reverse_lazy
 from django.views.generic import FormView
 
 from .forms import QuickBatchSearchForm, QuickQRSearchForm
-from .models import Seed
+from .models import SeedBatch
 
 
 class QuickBatchSearchView(LoginRequiredMixin, FormView):
@@ -15,17 +15,19 @@ class QuickBatchSearchView(LoginRequiredMixin, FormView):
 
     def form_valid(self, form):
         batch_number = form.cleaned_data["batch_number"].strip()
-        seed = (
-            Seed.objects.filter(
-                user=self.request.user, batch_number__iexact=batch_number
+        batch = (
+            SeedBatch.objects.filter(
+                seed__user=self.request.user, batch_number__iexact=batch_number
             )
-            .only("id")
+            .select_related("seed")
             .first()
         )
-        if not seed:
+        if not batch:
             form.add_error("batch_number", "No seed found with this batch number.")
             return self.form_invalid(form)
-        return HttpResponseRedirect(reverse_lazy("seed_detail", kwargs={"pk": seed.pk}))
+        return HttpResponseRedirect(
+            reverse_lazy("seed_detail", kwargs={"pk": batch.seed_id})
+        )
 
 
 class QuickQRSearchView(LoginRequiredMixin, FormView):
@@ -52,14 +54,16 @@ class QuickQRSearchView(LoginRequiredMixin, FormView):
             )
             return self.form_invalid(form)
 
-        seed = (
-            Seed.objects.filter(
-                user=self.request.user, batch_number__iexact=batch_number
+        batch = (
+            SeedBatch.objects.filter(
+                seed__user=self.request.user, batch_number__iexact=batch_number
             )
-            .only("id")
+            .select_related("seed")
             .first()
         )
-        if not seed:
+        if not batch:
             form.add_error("qr_content", f"No seed found for batch {batch_number}.")
             return self.form_invalid(form)
-        return HttpResponseRedirect(reverse_lazy("seed_detail", kwargs={"pk": seed.pk}))
+        return HttpResponseRedirect(
+            reverse_lazy("seed_detail", kwargs={"pk": batch.seed_id})
+        )

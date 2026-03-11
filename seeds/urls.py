@@ -4,6 +4,9 @@ from .views import (
     QuickBatchSearchView,
     QuickQRSearchView,
     ReminderCenterView,
+    SeedBatchCreateView,
+    SeedBatchDeleteView,
+    SeedBatchUpdateView,
     SeedCreateView,
     SeedDashboardView,
     SeedDeleteView,
@@ -67,4 +70,19 @@ urlpatterns = [
     ),
     path("<int:pk>/edit/", SeedUpdateView.as_view(), name="seed_update"),
     path("<int:pk>/delete/", SeedDeleteView.as_view(), name="seed_delete"),
+    path(
+        "<int:seed_pk>/batches/new/",
+        SeedBatchCreateView.as_view(),
+        name="seed_batch_create",
+    ),
+    path(
+        "batches/<int:pk>/edit/",
+        SeedBatchUpdateView.as_view(),
+        name="seed_batch_update",
+    ),
+    path(
+        "batches/<int:pk>/delete/",
+        SeedBatchDeleteView.as_view(),
+        name="seed_batch_delete",
+    ),
 ]

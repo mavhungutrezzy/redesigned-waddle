@@ -143,9 +143,7 @@
               <tr>
                 <th>Seed</th>
                 <th>Category</th>
-                <th>Batch</th>
                 <th>Stock</th>
-                <th>Best Before</th>
                 <th></th>
               </tr>
             </thead>
@@ -157,11 +155,12 @@
                   <div class="small text-success">{{ seed.variety|default:"-" }}</div>
                 </td>
                 <td><span class="badge border border-success text-success rounded-1">{{ seed.get_category_display }}</span></td>
-                <td class="seed-batch fw-bold">{{ seed.batch_number }}</td>
-                <td>{{ seed.quantity }} {{ seed.get_unit_display }}</td>
-                <td class="seed-date">{{ seed.best_before }}</td>
+                <td>{{ seed.latest_batch_quantity|default:"-" }} {% if seed.latest_batch_unit %}{{ seed.latest_batch_unit }}{% endif %}</td>
                 <td class="text-end">
-                  <a class="btn btn-sm btn-outline-dark" href="{% url 'seed_detail' seed.pk %}">Edit</a>
+                  <div class="d-inline-flex gap-2">
+                    <a class="btn btn-sm btn-outline-dark" href="{% url 'seed_detail' seed.pk %}">Edit</a>
+                    <a class="btn btn-sm btn-outline-success" href="{% url 'seed_batch_create' seed.pk %}">Add Batch</a>
+                  </div>
                 </td>
               </tr>
               {% endfor %}

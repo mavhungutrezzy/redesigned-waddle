@@ -1,0 +1,20 @@
+{% extends "_dashboard_base.html" %}
+
+{% block title %}Delete Batch{% endblock title %}
+{% block page_title %}Delete Batch{% endblock %}
+
+{% block content %}
+<div class="card border-0 shadow-sm mx-auto" style="max-width: 640px;">
+  <div class="card-body">
+    <h2 class="h5 mb-3">Delete Batch</h2>
+    <p class="mb-1">Seed: <strong>{{ batch.seed.name }}</strong></p>
+    <p class="mb-3">Batch: <strong>{{ batch.batch_number }}</strong></p>
+    <p class="text-muted">This action cannot be undone.</p>
+    <form method="post">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-danger">Delete Batch</button>
+      <a href="{% url 'seed_detail' batch.seed.pk %}" class="btn btn-outline-secondary">Cancel</a>
+    </form>
+  </div>
+</div>
+{% endblock content %}

@@ -92,8 +92,8 @@
               <div class="small text-success">{{ seed.variety|default:"-" }}</div>
             </td>
             <td><span class="badge border border-success text-success rounded-1">{{ seed.get_category_display }}</span></td>
-            <td class="fw-bold">{{ seed.batch_number }}</td>
-            <td>{{ seed.best_before }}</td>
+            <td class="fw-bold">{{ seed.latest_batch_number|default:"-" }}</td>
+            <td>{{ seed.latest_batch_best_before|default:"-" }}</td>
           </tr>
           {% endfor %}
         </tbody>

@@ -2,7 +2,7 @@
 
 {% block title %}{{ seed.name }}{% endblock title %}
 
-{% block page_title %}{{ seed.name }} ({{ seed.batch_number }}){% endblock %}
+{% block page_title %}{{ seed.name }}{% endblock %}
 
 {% block content %}
 
@@ -44,7 +44,7 @@
                     <div>
                       <h4 class="mb-1">{{ seed.name }}</h4>
                       <div class="small opacity">
-                        <i class="bi bi-upc me-1"></i>Batch: {{ seed.batch_number }}
+                        <i class="bi bi-upc me-1"></i>Batch: {% if latest_batch %}{{ latest_batch.batch_number }}{% else %}-{% endif %}
                       </div>
                     </div>
           
@@ -65,7 +65,7 @@
           </div>
 
         <!-- QR Code Section -->
-        {% if seed.qr_code %}
+        {% if latest_batch and latest_batch.qr_code %}
         <div class="card border-0 shadow-sm mb-4 overflow-hidden">
 
         
@@ -74,8 +74,8 @@
                 <!-- QR Container -->
                 <div class="position-relative d-inline-block mb-3">
                     <div class="p-3 bg-white rounded-4 shadow-sm border">
-                        <img src="{{ seed.qr_code.url }}"
-                             alt="QR code for {{ seed.batch_number }}"
+                        <img src="{{ latest_batch.qr_code.url }}"
+                             alt="QR code for {{ latest_batch.batch_number }}"
                              class="img-fluid"
                              style="width: 190px; height: 190px; object-fit: contain;">
                     </div>
@@ -88,8 +88,8 @@
         
                 <!-- Actions -->
                 <div class="d-grid">
-                    <a href="{{ seed.qr_code.url }}"
-                       download="qr-{{ seed.batch_number }}.png"
+                    <a href="{{ latest_batch.qr_code.url }}"
+                       download="qr-{{ latest_batch.batch_number }}.png"
                        class="btn btn-outline-primary btn-sm">
                         <i class="bi bi-download me-2"></i>Download QR Code
                     </a>
@@ -102,6 +102,8 @@
 
     <!-- Right Column: Details -->
     <div class="col-lg-7">
+        
+
         <div class="card border-1 shadow-sm mb-4">
             <div class="card-body p-4">
               <div class="d-flex align-items-center justify-content-between mb-3">
@@ -111,6 +113,9 @@
               </div>
           
               <dl class="row mb-0">
+                <dt class="col-5 col-md-4 text-muted fw-normal">Name</dt>
+                <dd class="col-7 col-md-8 mb-2">{{ seed.name }}</dd>
+
                 <dt class="col-5 col-md-4 text-muted fw-normal">Variety</dt>
                 <dd class="col-7 col-md-8 mb-2 ">{{ seed.variety|default:"-" }}</dd>
           
@@ -120,35 +125,15 @@
                     {{ seed.get_category_display }}
                   </span>
                 </dd>
+
+                <dt class="col-5 col-md-4 text-muted fw-normal">Unit</dt>
+                <dd class="col-7 col-md-8 mb-2">{{ seed.get_unit_display }}</dd>
           
                 <dt class="col-5 col-md-4 text-muted fw-normal">Current Stock</dt>
                 <dd class="col-7 col-md-8 mb-2 fw-bold text-success">
-                  {{ seed.quantity }} {{ seed.get_unit_display }}
+                  {% if latest_batch %}{{ latest_batch.quantity }} {{ latest_batch.get_unit_display }}{% else %}-{% endif %}
                 </dd>
-          
-                <dt class="col-5 col-md-4 text-muted fw-normal">Date Collected</dt>
-                <dd class="col-7 col-md-8 mb-2">{{ seed.date_collected|default:"-" }}</dd>
-          
-                <dt class="col-5 col-md-4 text-muted fw-normal">Best Before</dt>
-                <dd class="col-7 col-md-8 mb-2 {% if seed.is_expired %}text-danger{% endif %}">
-                  {{ seed.best_before|default:"-" }}
-                  {% if seed.is_expired %}
-                    <span class="badge bg-danger ms-2">Expired</span>
-                  {% endif %}
-                </dd>
-          
-                <dt class="col-5 col-md-4 text-muted fw-normal">Source</dt>
-                <dd class="col-7 col-md-8 mb-2">{{ seed.get_collection_source_display }}</dd>
-          
-                <dt class="col-5 col-md-4 text-muted fw-normal">Storage Location</dt>
-                <dd class="col-7 col-md-8 mb-0">{{ seed.storage_location|default:"Not specified" }}</dd>
               </dl>
-          
-              {% if seed.notes %}
-                <hr class="my-3">
-                <div class="text-muted small mb-1">Notes</div>
-                <div class="small">{{ seed.notes }}</div>
-              {% endif %}
             </div>
           </div>
     </div>
@@ -156,7 +141,7 @@
 
 <!-- Photo Gallery -->
 {% if seed.photos.all|length > 1 %}
-<div class="card border-0 shadow-sm mt-4">
+<div class="card border-0 shadow-sm mb-4">
     <div class="card-header bg-white border-bottom py-3">
         <h5 class="mb-0"><i class="bi bi-images me-2 text-success"></i>Photo Gallery</h5>
     </div>
@@ -191,6 +176,44 @@
 </div>
 {% endif %}
 
+<div class="card border-0 shadow-sm mt-4">
+  <div class="card-header bg-white d-flex justify-content-between align-items-center">
+    <h5 class="mb-0">Batches</h5>
+    <a href="{% url 'seed_batch_create' seed.pk %}" class="btn btn-sm btn-success">Add Batch</a>
+  </div>
+  <div class="table-responsive">
+    <table class="table mb-0 align-middle">
+      <thead>
+        <tr>
+          <th>Batch</th>
+          <th>Quantity</th>
+          <th>Collected</th>
+          <th>Best Before</th>
+          <th>Supplier</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for batch in batches %}
+        <tr>
+          <td class="fw-semibold">{{ batch.batch_number }}</td>
+          <td>{{ batch.quantity }} {{ batch.get_unit_display }}</td>
+          <td>{{ batch.date_collected }}</td>
+          <td>{{ batch.best_before }}</td>
+          <td>{{ batch.supplier|default:"-" }}</td>
+          <td class="text-end">
+            <a href="{% url 'seed_batch_update' batch.pk %}" class="btn btn-sm btn-outline-primary">Edit</a>
+            <a href="{% url 'seed_batch_delete' batch.pk %}" class="btn btn-sm btn-outline-danger">Delete</a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" class="text-center text-muted py-3">No batches yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
 <!-- Delete Confirmation Modal -->
 <div class="modal fade" id="deleteModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
@@ -199,7 +222,7 @@
                 <h5 class="modal-title"><i class="me-2"></i>Confirm Delete</h5>
             </div>
             <div class="modal-body">
-                <p>Are you sure you want to delete <strong>{{ seed.name }}</strong> (Batch: {{ seed.batch_number }})?</p>
+                <p>Are you sure you want to delete <strong>{{ seed.name }}</strong>?</p>
                 <p class="text-muted small mb-0">This action cannot be undone.</p>
             </div>
             <div class="modal-footer">

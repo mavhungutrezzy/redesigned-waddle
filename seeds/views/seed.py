@@ -1,7 +1,7 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import ValidationError
 from django.http import HttpResponseRedirect
-from django.shortcuts import render
+from django.shortcuts import get_object_or_404, render
 from django.urls import reverse_lazy
 from django.views import View
 from django.views.generic import (
@@ -13,8 +13,8 @@ from django.views.generic import (
     UpdateView,
 )
 
-from .forms import SeedForm, SeedPhotoFormSet
-from .models import Seed
+from .forms import SeedBatchForm, SeedForm, SeedPhotoFormSet
+from .models import Seed, SeedBatch
 from .queries import (
     apply_seed_filters,
     get_seed_dashboard_context,
@@ -59,6 +59,13 @@ class SeedDetailView(LoginRequiredMixin, UserSeedQuerysetMixin, DetailView):
     model = Seed
     template_name = "seeds/seed_detail.html"
     context_object_name = "seed"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        batches = self.object.batches.order_by("-date_collected", "-created_at")
+        context["batches"] = batches
+        context["latest_batch"] = batches.first()
+        return context
 
 
 class SeedLabelPrintView(LoginRequiredMixin, UserSeedQuerysetMixin, DetailView):
@@ -124,6 +131,8 @@ class SeedCreateView(LoginRequiredMixin, CreateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        if "batch_form" not in context:
+            context["batch_form"] = SeedBatchForm(self.request.POST or None, prefix="batch")
         if "photo_formset" not in context:
             context["photo_formset"] = SeedPhotoFormSet(
                 self.request.POST or None,
@@ -134,16 +143,26 @@ class SeedCreateView(LoginRequiredMixin, CreateView):
 
     def form_valid(self, form):
         context = self.get_context_data(form=form)
+        batch_form = context["batch_form"]
         photo_formset = context["photo_formset"]
-        if not photo_formset.is_valid():
+        if not batch_form.is_valid() or not photo_formset.is_valid():
             return self.render_to_response(context)
         try:
-            self.object = create_seed(form.cleaned_data, user=self.request.user)
+            self.object = create_seed(
+                form.cleaned_data,
+                user=self.request.user,
+                initial_batch_data=batch_form.cleaned_data,
+            )
         except ValidationError as exc:
             if hasattr(exc, "message_dict"):
                 for field, messages in exc.message_dict.items():
                     for message in messages:
-                        form.add_error(field if field in form.fields else None, message)
+                        if field in form.fields:
+                            form.add_error(field, message)
+                        elif field in batch_form.fields:
+                            batch_form.add_error(field, message)
+                        else:
+                            form.add_error(None, message)
             else:
                 form.add_error(None, str(exc))
             return self.render_to_response(context)
@@ -200,3 +219,57 @@ class SeedDeleteView(LoginRequiredMixin, UserSeedQuerysetMixin, DeleteView):
     model = Seed
     template_name = "seeds/seed_confirm_delete.html"
     success_url = reverse_lazy("seed_list")
+
+
+class SeedBatchCreateView(LoginRequiredMixin, CreateView):
+    model = SeedBatch
+    form_class = SeedBatchForm
+    template_name = "seeds/seed_batch_form.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        self.seed = get_object_or_404(Seed, pk=self.kwargs["seed_pk"], user=request.user)
+        return super().dispatch(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        form.instance.seed = self.seed
+        return super().form_valid(form)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["seed"] = self.seed
+        context["is_batch_create"] = True
+        return context
+
+    def get_success_url(self):
+        return reverse_lazy("seed_detail", kwargs={"pk": self.seed.pk})
+
+
+class SeedBatchUpdateView(LoginRequiredMixin, UpdateView):
+    model = SeedBatch
+    form_class = SeedBatchForm
+    template_name = "seeds/seed_batch_form.html"
+    context_object_name = "batch"
+
+    def get_queryset(self):
+        return SeedBatch.objects.filter(seed__user=self.request.user).select_related("seed")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["seed"] = self.object.seed
+        context["is_batch_create"] = False
+        return context
+
+    def get_success_url(self):
+        return reverse_lazy("seed_detail", kwargs={"pk": self.object.seed.pk})
+
+
+class SeedBatchDeleteView(LoginRequiredMixin, DeleteView):
+    model = SeedBatch
+    template_name = "seeds/seed_batch_confirm_delete.html"
+    context_object_name = "batch"
+
+    def get_queryset(self):
+        return SeedBatch.objects.filter(seed__user=self.request.user).select_related("seed")
+
+    def get_success_url(self):
+        return reverse_lazy("seed_detail", kwargs={"pk": self.object.seed.pk})

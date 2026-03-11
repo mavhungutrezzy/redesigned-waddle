@@ -1,18 +1,13 @@
 from django import forms
 from django.forms import BaseInlineFormSet, inlineformset_factory
 
-from .models import Seed, SeedPhoto
+from .models import Seed, SeedBatch, SeedPhoto
 
 
 class SeedForm(forms.ModelForm):
     class Meta:
         model = Seed
-        exclude = ("user", "batch_number", "created_at", "updated_at", "qr_code")
-        widgets = {
-            "date_collected": forms.DateInput(attrs={"type": "date"}),
-            "best_before": forms.DateInput(attrs={"type": "date"}),
-            "notes": forms.Textarea(attrs={"rows": 4}),
-        }
+        fields = ("name", "variety", "category", "unit")
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -23,17 +18,6 @@ class SeedForm(forms.ModelForm):
                 else "form-control"
             )
             field.widget.attrs["class"] = css_class
-
-    def clean(self):
-        cleaned_data = super().clean()
-        date_collected = cleaned_data.get("date_collected")
-        best_before = cleaned_data.get("best_before")
-        if date_collected and best_before and best_before < date_collected:
-            self.add_error(
-                "best_before",
-                "Best before date must be on or after collected date.",
-            )
-        return cleaned_data
 
 
 class SeedPhotoForm(forms.ModelForm):
@@ -78,3 +62,45 @@ SeedPhotoFormSet = inlineformset_factory(
     max_num=3,
     validate_max=True,
 )
+
+
+class SeedBatchForm(forms.ModelForm):
+    class Meta:
+        model = SeedBatch
+        fields = (
+            "batch_number",
+            "quantity",
+            "date_collected",
+            "best_before",
+            "collection_source",
+            "supplier",
+            "storage_location",
+            "notes",
+        )
+        widgets = {
+            "date_collected": forms.DateInput(attrs={"type": "date"}),
+            "best_before": forms.DateInput(attrs={"type": "date"}),
+            "notes": forms.Textarea(attrs={"rows": 4}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields.values():
+            css_class = (
+                "form-select"
+                if isinstance(field.widget, forms.Select)
+                else "form-control"
+            )
+            field.widget.attrs["class"] = css_class
+        self.fields["batch_number"].required = False
+
+    def clean(self):
+        cleaned_data = super().clean()
+        date_collected = cleaned_data.get("date_collected")
+        best_before = cleaned_data.get("best_before")
+        if date_collected and best_before and best_before < date_collected:
+            self.add_error(
+                "best_before",
+                "Best before date must be on or after collected date.",
+            )
+        return cleaned_data

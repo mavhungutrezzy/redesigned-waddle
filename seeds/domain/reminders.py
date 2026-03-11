@@ -1,17 +1,17 @@
 from datetime import date
 from typing import Any, Callable, TypedDict
 
-from django.db.models import F, QuerySet
+from django.db.models import QuerySet
 from django.urls import reverse_lazy
 from django.utils import timezone
 
-from seeds.models import Seed, SeedWishlist
+from seeds.models import SeedBatch, SeedWishlist
 
 
 class ReminderQuerysets(TypedDict):
     today: date
-    expiring_seeds: QuerySet[Seed]
-    low_stock_seeds: QuerySet[Seed]
+    expiring_seeds: QuerySet[SeedBatch]
+    low_stock_seeds: QuerySet[SeedBatch]
     wishlist_follow_ups: QuerySet[SeedWishlist]
 
 
@@ -35,15 +35,13 @@ class ReminderRow(TypedDict):
 def get_reminder_querysets_for_user(user) -> ReminderQuerysets:
     today = timezone.localdate()
     expiring_30_days = today + timezone.timedelta(days=30)
-    user_seeds = Seed.objects.filter(user=user)
+    user_batches = SeedBatch.objects.filter(seed__user=user).select_related("seed")
 
-    expiring_seeds = user_seeds.filter(
+    expiring_seeds = user_batches.filter(
         best_before__gte=today,
         best_before__lte=expiring_30_days,
-    ).order_by("best_before", "name")
-    low_stock_seeds = user_seeds.filter(
-        quantity__lte=F("low_stock_threshold")
-    ).order_by("quantity", "name")
+    ).order_by("best_before", "seed__name")
+    low_stock_seeds = SeedBatch.objects.none()
     wishlist_follow_ups = SeedWishlist.objects.filter(
         user=user,
         acquired=False,
@@ -73,33 +71,33 @@ def get_reminder_counts_for_user(user) -> ReminderCounts:
 
 
 def build_reminder_rows(
-    expiring_seeds: QuerySet[Seed],
-    low_stock_seeds: QuerySet[Seed],
+    expiring_seeds: QuerySet[SeedBatch],
+    low_stock_seeds: QuerySet[SeedBatch],
     wishlist_follow_ups: QuerySet[SeedWishlist],
     reverse: Callable[..., str] = reverse_lazy,
 ) -> list[ReminderRow]:
     reminder_rows: list[ReminderRow] = []
-    for seed in expiring_seeds:
+    for batch in expiring_seeds:
         reminder_rows.append(
             {
                 "type": "best_before",
                 "type_label": "Best Before",
-                "name": seed.name,
-                "subtitle": seed.batch_number,
-                "value": seed.best_before,
-                "action_url": reverse("seed_detail", kwargs={"pk": seed.pk}),
+                "name": batch.seed.name,
+                "subtitle": batch.batch_number,
+                "value": batch.best_before,
+                "action_url": reverse("seed_detail", kwargs={"pk": batch.seed.pk}),
                 "action_label": "View Seed",
             }
         )
-    for seed in low_stock_seeds:
+    for batch in low_stock_seeds:
         reminder_rows.append(
             {
                 "type": "low_stock",
                 "type_label": "Low Stock",
-                "name": seed.name,
-                "subtitle": f"{seed.quantity} {seed.get_unit_display()}",
-                "value": f"Threshold {seed.low_stock_threshold}",
-                "action_url": reverse("seed_detail", kwargs={"pk": seed.pk}),
+                "name": batch.seed.name,
+                "subtitle": f"{batch.quantity} {batch.get_unit_display()}",
+                "value": "Stock needs review",
+                "action_url": reverse("seed_detail", kwargs={"pk": batch.seed.pk}),
                 "action_label": "Update Stock",
             }
         )

@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Seed, SeedPhoto, SeedWishlist
+from .models import Seed, SeedBatch, SeedPhoto, SeedWishlist
 
 
 class SeedPhotoInline(admin.TabularInline):
@@ -9,25 +9,52 @@ class SeedPhotoInline(admin.TabularInline):
     max_num = 3
 
 
+class SeedBatchInline(admin.TabularInline):
+    model = SeedBatch
+    extra = 0
+    fields = (
+        "batch_number",
+        "quantity",
+        "date_collected",
+        "best_before",
+        "collection_source",
+        "supplier",
+        "storage_location",
+    )
+    readonly_fields = ("created_at", "updated_at")
+
+
 @admin.register(Seed)
 class SeedAdmin(admin.ModelAdmin):
     list_display = (
         "name",
         "category",
-        "batch_number",
-        "quantity",
-        "unit",
-        "date_collected",
-        "best_before",
         "user",
+        "created_at",
+        "updated_at",
     )
-    list_filter = ("category", "unit", "collection_source")
-    search_fields = ("name", "variety", "batch_number", "supplier", "user__email")
+    list_filter = ("category", "unit")
+    search_fields = ("name", "variety", "user__email")
     ordering = ("-created_at",)
     list_select_related = ("user",)
-    readonly_fields = ("batch_number", "qr_code", "created_at", "updated_at")
+    readonly_fields = ("created_at", "updated_at")
     autocomplete_fields = ("user",)
-    inlines = (SeedPhotoInline,)
+    inlines = (SeedPhotoInline, SeedBatchInline)
+
+
+@admin.register(SeedBatch)
+class SeedBatchAdmin(admin.ModelAdmin):
+    list_display = (
+        "seed",
+        "batch_number",
+        "quantity",
+        "date_collected",
+        "best_before",
+    )
+    list_filter = ("collection_source",)
+    search_fields = ("seed__name", "seed__variety", "batch_number", "supplier")
+    list_select_related = ("seed",)
+    ordering = ("-created_at",)
 
 
 @admin.register(SeedWishlist)

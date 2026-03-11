@@ -50,9 +50,39 @@ class Seed(models.Model):
     name = models.CharField(max_length=255)
     variety = models.CharField(max_length=255)
     category = models.CharField(max_length=255, choices=SEED_CATEGORY.choices)
-    quantity = models.PositiveIntegerField()
-    low_stock_threshold = models.PositiveIntegerField(default=5)
     unit = models.CharField(max_length=255, choices=SEED_UNIT.choices)
+    notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["user", "category"], name="seed_user_cat_idx"),
+            models.Index(fields=["user", "created_at"], name="seed_user_created_idx"),
+        ]
+
+    def __str__(self):
+        return f"{self.name} ({self.variety})" if self.variety else self.name
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+
+    @property
+    def label_name(self) -> str:
+        variety = (self.variety or "").strip()
+        if not variety:
+            return self.name
+        return f"{self.name} - {variety}"
+
+    @property
+    def latest_batch(self):
+        return self.batches.order_by("-date_collected", "-created_at").first()
+
+
+class SeedBatch(models.Model):
+    seed = models.ForeignKey(Seed, on_delete=models.CASCADE, related_name="batches")
+    quantity = models.PositiveIntegerField()
     date_collected = models.DateField()
     best_before = models.DateField()
     batch_number = models.CharField(max_length=255)
@@ -60,7 +90,7 @@ class Seed(models.Model):
         max_length=255, choices=COLLECTION_SOURCE.choices
     )
     supplier = models.CharField(max_length=255)
-    storage_location = models.CharField(max_length=255)
+    storage_location = models.CharField(max_length=255, blank=True)
     notes = models.TextField(blank=True)
     qr_code = models.FileField(upload_to="seed_qr/", blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -69,22 +99,22 @@ class Seed(models.Model):
     class Meta:
         ordering = ["-created_at"]
         indexes = [
-            models.Index(fields=["user", "best_before"], name="seed_user_best_idx"),
-            models.Index(fields=["user", "category"], name="seed_user_cat_idx"),
-            models.Index(
-                fields=["user", "collection_source"], name="seed_user_src_idx"
-            ),
-            models.Index(fields=["user", "created_at"], name="seed_user_created_idx"),
+            models.Index(fields=["seed", "best_before"], name="batch_seed_best_idx"),
+            models.Index(fields=["seed", "created_at"], name="batch_seed_created_idx"),
+            models.Index(fields=["batch_number"], name="batch_number_idx"),
         ]
         constraints = [
             models.CheckConstraint(
                 condition=models.Q(best_before__gte=models.F("date_collected")),
-                name="seed_best_before_gte_collected",
-            )
+                name="batch_best_before_gte_collected",
+            ),
+            models.UniqueConstraint(
+                fields=["seed", "batch_number"], name="uniq_seed_batch_number"
+            ),
         ]
 
     def __str__(self):
-        return f"{self.name} ({self.batch_number})"
+        return f"{self.seed.name} ({self.batch_number})"
 
     def clean(self):
         if (
@@ -97,15 +127,19 @@ class Seed(models.Model):
             )
 
     @property
-    def label_name(self) -> str:
-        variety = (self.variety or "").strip()
-        if not variety:
-            return self.name
-        return f"{self.name} - {variety}"
+    def unit(self):
+        """Access unit from parent seed."""
+        return self.seed.unit
+
+    def get_unit_display(self):
+        return self.seed.get_unit_display()
 
     @property
     def label_best_before(self) -> str:
-        return self.best_before.strftime("%Y-%m-%d")
+        return self.best_before.isoformat()
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
 
 
 class SeedPhoto(models.Model):
@@ -123,7 +157,7 @@ class SeedPhoto(models.Model):
             raise ValidationError("A seed can only have up to 3 photos.")
 
     def __str__(self):
-        return f"Photo for {self.seed.batch_number}"
+        return f"Photo for {self.seed}"
 
 
 class SeedWishlist(models.Model):

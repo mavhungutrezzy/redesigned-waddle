@@ -1,10 +1,10 @@
 from typing import TypedDict
 
-from django.db.models import Count, Q, QuerySet
+from django.db.models import Count, F, OuterRef, Q, QuerySet, Subquery
 from django.utils import timezone
 
 from seeds.domain.reminders import get_reminder_counts_for_user
-from seeds.models import Seed, SeedWishlist
+from seeds.models import Seed, SeedBatch, SeedWishlist
 
 
 class SeedFilters(TypedDict):
@@ -20,7 +20,16 @@ class WishlistFilters(TypedDict):
 
 
 def get_user_seed_queryset(user) -> QuerySet[Seed]:
-    return Seed.objects.filter(user=user)
+    latest_batch = SeedBatch.objects.filter(seed=OuterRef("pk")).order_by(
+        "-date_collected", "-created_at"
+    )
+    return Seed.objects.filter(user=user).annotate(
+        latest_batch_id=Subquery(latest_batch.values("id")[:1]),
+        latest_batch_number=Subquery(latest_batch.values("batch_number")[:1]),
+        latest_batch_quantity=Subquery(latest_batch.values("quantity")[:1]),
+        latest_batch_unit=F("unit"),
+        latest_batch_best_before=Subquery(latest_batch.values("best_before")[:1]),
+    )
 
 
 def get_user_wishlist_queryset(user) -> QuerySet[SeedWishlist]:
@@ -46,13 +55,13 @@ def apply_seed_filters(
         queryset = queryset.filter(
             Q(name__icontains=query)
             | Q(variety__icontains=query)
-            | Q(batch_number__icontains=query)
+            | Q(batches__batch_number__icontains=query)
         )
     if category:
         queryset = queryset.filter(category=category)
     if source:
-        queryset = queryset.filter(collection_source=source)
-    return queryset
+        queryset = queryset.filter(batches__collection_source=source)
+    return queryset.distinct()
 
 
 def get_seed_filter_context(filters: SeedFilters) -> dict:
@@ -61,7 +70,7 @@ def get_seed_filter_context(filters: SeedFilters) -> dict:
         "selected_category": filters["category"],
         "selected_source": filters["source"],
         "category_choices": Seed._meta.get_field("category").choices,
-        "source_choices": Seed._meta.get_field("collection_source").choices,
+        "source_choices": SeedBatch._meta.get_field("collection_source").choices,
     }
 
 
@@ -104,6 +113,7 @@ def get_wishlist_filter_context(filters: WishlistFilters) -> dict:
 
 def get_seed_dashboard_context(user) -> dict:
     seeds = get_user_seed_queryset(user)
+    batches = SeedBatch.objects.filter(seed__user=user)
     today = timezone.localdate()
     expiring_30_days = today + timezone.timedelta(days=30)
     reminder_counts = get_reminder_counts_for_user(user)
@@ -111,11 +121,11 @@ def get_seed_dashboard_context(user) -> dict:
     return {
         "total_seeds": seeds.count(),
         "total_categories": seeds.values("category").distinct().count(),
-        "expiring_soon": seeds.filter(
+        "expiring_soon": batches.filter(
             best_before__gte=today,
             best_before__lte=expiring_30_days,
         ).count(),
-        "expired_count": seeds.filter(best_before__lt=today).count(),
+        "expired_count": batches.filter(best_before__lt=today).count(),
         "low_stock_count": reminder_counts["low_stock_count"],
         "wishlist_pending_count": get_user_wishlist_queryset(user)
         .filter(acquired=False)

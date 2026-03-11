@@ -56,6 +56,29 @@
         {% endfor %}
       </div>
     </div>
+
+    {% if not seed and batch_form %}
+    <div class="form-section mt-4">
+      <h5 class="mb-3">Initial Batch</h5>
+      <div class="row g-3">
+        {% for field in batch_form %}
+        <div class="col-md-6 col-lg-4">
+          <div class="form-floating">
+            {{ field }}
+            <label for="{{ field.id_for_label }}">
+              {{ field.label }}{% if field.field.required %} <span class="text-danger required-star">*</span>{% endif %}
+            </label>
+          </div>
+          {% for error in field.errors %}
+          <div class="text-danger small mt-1 ms-1">
+            <i class="bi bi-exclamation-circle me-1"></i>{{ error }}
+          </div>
+          {% endfor %}
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
     <!-- Photos Section -->
 <div class="form-section my-5">
   

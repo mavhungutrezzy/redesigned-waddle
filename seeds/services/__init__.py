@@ -1,4 +1,4 @@
-from .domain.services import (
+from ..domain.services import (
     acquire_wishlist_item,
     build_batch_prefix,
     build_seed_label_data,
